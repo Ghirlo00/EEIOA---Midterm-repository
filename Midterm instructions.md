@@ -18,7 +18,7 @@ import numpy as np
 ```
 ### Import exiobase
 Beware: exiobase is composed by large datasets so it may take some time to load and process
-*Note:* Import satelite only, impacts are not relevant unless requested.
+**Note:** Import satelite only, impacts are not relevant unless requested.
 
 Change the destination of the `path = ` in order to get the files from the correct folder.
 
@@ -35,7 +35,7 @@ F_sat = pd.read_csv(f'{path}satellite/F.txt' , sep='\t', index_col=[0], header=[
 F_sat_hh = pd.read_csv(f'{path}satellite/F_y.txt' , sep='\t', index_col=[0], header=[0, 1])
 ```
 
-*Note:* So far you have imported the IOT of all 44 countries and 5 RoW regions per the 163 industries or 200 products. In the exam you'll be asked to focus on a specific region. These are the acronyms in the ISO. 
+**Note:** So far you have imported the IOT of all 44 countries and 5 RoW regions per the 163 industries or 200 products. In the exam you'll be asked to focus on a specific region. These are the acronyms in the ISO. 
 
 <img width="637" alt="Screenshot 2024-04-14 at 11 46 14" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/03751485-a013-421d-abef-f2b5a9584c17">
 
@@ -63,3 +63,48 @@ f = F * x_inv
 
 f
 ```
+
+## III. Calculate the footprint of a nation
+Footprints are calculated differently depending on the impacts connected. Carbon footprint has a global impact (GWP) therefore its calculation doesn't need to account for specific exports of the impact in other countries. Whereas, Water footprint is a local impact that must account for the implications of exporting production.
+In this course we have discussed two types of comprehensive footprints: 
+
+--> **Dashboard** = Carbon, Water, Land and Employement
+
+--> **Material** = Biomass, Fossil fuels, Metal ores, Non-Metallic minerals
+
+The images below are summaries of the main formulas that are applied in the code.
+
+<img width="610" alt="Screenshot 2024-04-14 at 12 27 37" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/cd6e5339-e1cf-4297-ae6e-09457942834c">
+
+<img width="613" alt="Screenshot 2024-04-14 at 12 27 43" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/c265d19a-44df-49b9-a8ec-79deba7200b3">
+
+### Carbon footprint of a nation
+We start by creating a modified finald demand matrix (Y_mod) that accounts for only those categories we account in the calculation in the specific nation (example Netherlands)
+
+```python
+Y_mod = Y.loc[:,"NL"]
+Y_mod
+```
+
+Then we isolate the extantion in which we are interested
+```python
+indicator = "GHG emissions (GWP100) | Problem oriented approach: baseline (CML, 2001) | GWP100 (IPCC, 2007)"
+```
+```python
+# the intensity vector in which we are interested
+f_ =  f.loc[indicator]
+
+f_
+```
+```python
+# the final demand CO2 emissions
+
+e_hh_ = F_hh.loc[indicator, "NL"]
+```
+```python
+# Calculate the total global footprint
+e_total_reg = f_ @ L @ Y_mod.sum(axis=1) + e_hh_.sum()
+e_total_reg
+```
+
+--> _Somansh: Explain when you diagonalize f and when Y. Is it because the f is used to analyse how an impact is exported up the supply chain while Y...?_
