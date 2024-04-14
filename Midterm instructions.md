@@ -1,5 +1,6 @@
 # Midterm exam repository
-This file is a summary of all the main strings necessary for successfully passing the midterm exam
+This file is a summary of all the main strings necessary for successfully passing the midterm exam.
+A different version of this repository can be found here [explainations](https://colab.research.google.com/drive/1Z0jPk2rJgV6SCm6RD1QUDaOAOYYPNT3D?usp=drive_link#scrollTo=uV0ApU9UNmDh) 
 
 ## General Instructions
 1. Please ensure that you run each cell (ctrl+enter) so that your inputs are saved
@@ -46,7 +47,7 @@ L - Leontieff inverse - (I - A)<sup>-1</sup>
 x - product output - L * Y --> Some x values are equal to 0. These cannot be inverted therefore we want to select only those that are >0.
 f - extension coeffiecients - F * x_invense
 
---> _Why axis=1 in formula for x?_
+**Note:** Axis 1 calculates along the rows, while axis 0 calculates along the columns.
 
 ```python
 I = np.identity(A.shape[0])
