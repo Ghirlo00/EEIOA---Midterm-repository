@@ -79,6 +79,15 @@ The images below are summaries of the main formulas that are applied in the code
 
 <img width="613" alt="Screenshot 2024-04-14 at 12 27 43" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/c265d19a-44df-49b9-a8ec-79deba7200b3">
 
+### Import population values for per capita calculations
+Download the excel file. Rename accurately. Drop it in the right folder. Call pop2015 with the requested year. If asked to select a row use for example `pop2015 = population.loc["AT","y2015"]`
+
+```python
+# Import population data
+population = pd.read_excel('data/exiobase_PopulationGDP_1995_2019.xlsx',sheet_name='Population', index_col=[0, 1, 2])
+pop2015 = population.loc[:,"y2015"]
+```
+
 ### Carbon footprint of a nation
 We start by creating a modified finald demand matrix (Y_mod) that accounts for only those categories we account in the calculation in the specific nation (example Netherlands)
 
