@@ -5,7 +5,7 @@ A different version of this repository can be found here [explainations](https:/
 __Note:__ In case the following code snippets were not to work properly you can resort to use the following original files
 1. [Land Use](https://github.com/Ghirlo00/EEIOA---Midterm-repository/blob/main/Land%20use.ipynb)
 2. [UK - Non-metallic Minerals vs. Metal ores](https://github.com/Ghirlo00/EEIOA---Midterm-repository/blob/main/UK%20-%20Non-metallic%20Minerals%20vs.%20Metal%20Ores..ipynb)
-3. [US_CN - Carbon Footprint]([https://github.com/Ghirlo00/EEIOA---Midterm-repository/blob/main/Land%20use.ipynb](https://github.com/Ghirlo00/EEIOA---Midterm-repository/blob/main/US_CN%20-%20Carbon%20footprint.ipynb)
+3. [US_CN - Carbon Footprint](https://github.com/Ghirlo00/EEIOA---Midterm-repository/blob/main/US_CN%20-%20Carbon%20footprint.ipynb)
 
 
 ## General Instructions
