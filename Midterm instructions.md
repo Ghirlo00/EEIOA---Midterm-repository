@@ -2,6 +2,7 @@
 This file is a summary of all the main strings necessary for successfully passing the midterm exam.
 A different version of this repository can be found here [explainations](https://colab.research.google.com/drive/1Z0jPk2rJgV6SCm6RD1QUDaOAOYYPNT3D?usp=drive_link#scrollTo=uV0ApU9UNmDh) 
 
+Note: In case the following code snippets were not to work properly you can resort to use the following original files
 
 
 ## General Instructions
