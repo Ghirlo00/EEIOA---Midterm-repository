@@ -2,6 +2,8 @@
 This file is a summary of all the main strings necessary for successfully passing the midterm exam.
 A different version of this repository can be found here [explainations](https://colab.research.google.com/drive/1Z0jPk2rJgV6SCm6RD1QUDaOAOYYPNT3D?usp=drive_link#scrollTo=uV0ApU9UNmDh) 
 
+
+
 ## General Instructions
 1. Please ensure that you run each cell (ctrl+enter) so that your inputs are saved
 2. All questions have either coding cell or a text cell, or a combination of the two.
@@ -72,7 +74,7 @@ f = F * x_inv
 f
 ```
 
-## III. Calculate the footprint of a nation
+## III. Ecological footprint
 Footprints are calculated differently depending on the impacts connected. Carbon footprint has a global impact (GWP) therefore its calculation doesn't need to account for specific exports of the impact in other countries. Whereas, Water footprint is a local impact that must account for the implications of exporting production.
 In this course we have discussed two types of comprehensive footprints: 
 
@@ -85,19 +87,38 @@ The images below are summaries of the main formulas that are applied in the code
 <img width="610" alt="Screenshot 2024-04-14 at 12 27 37" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/cd6e5339-e1cf-4297-ae6e-09457942834c">
 
 <img width="613" alt="Screenshot 2024-04-14 at 12 27 43" src="https://github.com/Ghirlo00/EEIOA---Midterm-repository/assets/166986311/c265d19a-44df-49b9-a8ec-79deba7200b3">
-
-### Import population values for per capita calculations
-Download the excel file. Rename accurately. Drop it in the right folder. Call pop2015 with the requested year. If asked to select a row use for example `pop2015 = population.loc["AT","y2015"]`
+  
+### 3.1 Territorial Footprint
+A territorial footprint only accounts for the impacts produced directly in a territory. These can be:
+1. __Carbon footprint__ - In this example it uses only f_sat_CO2 but could use the extended version with other indicators.
 
 ```python
-# Import population data
-population = pd.read_excel('data/exiobase_PopulationGDP_1995_2019.xlsx',sheet_name='Population', index_col=[0, 1, 2])
-pop2015 = population.loc[:,"y2015"]
+e_CO2_pba = np.diag(f_sat_CO2) @ x
+e_CO2_pba = e_CO2_pba.reshape(r,s).sum(1) + F_sat_hh_CO2_reg
+
+e_CO2_pba_pp = e_CO2_pba/pop2015.values/1000 #convert unit from kg to tonne/capita
+
+e_CO2_pba_pp.loc[["US","CN"]]
 ```
 
-### Carbon footprint of a nation
+2. __Material footprint__ - In this example the material is the Non-metalli minerals in the UK.
+```python
+F_minerals_ = F_sat.loc[F_sat.index.str.contains("Domestic Extraction Used - Non-Metallic Minerals")]
+F_minerals_hh = F_sat_hh.loc[F_sat_hh.index.str.contains("Domestic Extraction Used - Non-Metallic Minerals")]
+F_minerals_tot_ter = pd.concat([F_minerals_.loc[:,"GB"], F_minerals_hh.loc[:,"GB"]], axis=1).sum().sum()
+F_minerals_tot_ter
+```
+
+### 3.2 National Footprint
+This calculation accounts also for the indirect emissions caused by the consumption demand of the nation.
 We start by creating a modified finald demand matrix (Y_mod) that accounts for only those categories we account in the calculation in the specific nation (example Netherlands)
 
+Sometime it might be necessary to group all the Y for doing the calculation:
+```python
+Y_reg = Y.groupby(level=0, axis=1, sort=False).sum()
+Y_reg
+```
+Then always:
 ```python
 Y_mod = Y.loc[:,"NL"]
 Y_mod
@@ -110,12 +131,10 @@ indicator = "GHG emissions (GWP100) | Problem oriented approach: baseline (CML, 
 ```python
 # the intensity vector in which we are interested
 f_ =  f.loc[indicator]
-
 f_
 ```
 ```python
 # the final demand CO2 emissions
-
 e_hh_ = F_hh.loc[indicator, "NL"]
 ```
 ```python
@@ -124,10 +143,67 @@ e_total_reg = f_ @ L @ Y_mod.sum(axis=1) + e_hh_.sum()
 e_total_reg
 ```
 
---> _Somansh: Explain when you diagonalize f and when Y. Is it because the f is used to analyse how an impact is exported up the supply chain while Y...?_
+### 3.3 Emissions Embodied in Trade
+These calculations are necessary to understand if a country is a net importer or exporter of an impact.
 
-## Codes you'll need
+__Example 1:__ was the UK a net importer or net exporter of non-metallic minerals in 2016? 
+```python
+net_import = e_minerals - F_minerals_tot_ter
+net_import
+```
+Top three regions from which the UK imported non-metallic minerals in 2016:
+```python
+e_minerals = np.diag(f_minerals) @ L @ Y_reg
 
+e_minerals.index = Y.index
+
+region_labels = Y.index.to_frame(index=False).region.unique()
+sector_labels = Y.index.to_frame(index=False).sector.unique()
+
+CBA_minerals = pd.DataFrame(e_minerals.loc[:, "GB"].values.reshape(49,163), columns=sector_labels, index=region_labels).sum(axis=1)
+
+CBA_minerals[CBA_minerals.index!="GB"].sort_values(ascending=False).head(3)
+```
+
+__Example 2:__ Were the US and China net importers or exporters of CO2 emissions in 2015?
+```python
+net_import = (e_CO2 - e_CO2_pba)*1e-9 # convert from kg to million metric ton
+net_import.loc[["US","CN"]]
+```
+top three regional contributers of US' and China's carbon footprints:
+```python
+e_CO2_cont = np.diag(f_sat_CO2) @ L @ Y_reg
+e_CO2_US = e_CO2_cont.loc[:, "US"]
+e_CO2_CN = e_CO2_cont.loc[:, "CN"]
+
+e_CO2_US.index = Y.index
+e_CO2_CN.index = Y.index
+
+# print(e_CO2_US.groupby(level=0).sum().nlargest(n=3))
+# print(e_CO2_CN.groupby(level=0).sum().nlargest(n=3))
+
+print(e_CO2_US.groupby(level=0).sum().sort_values(ascending=False)[:3])
+print(e_CO2_CN.groupby(level=0).sum().sort_values(ascending=False)[:3])
+```
+how much CO2 emissions did the US outsourced to China in 2015
+```python
+net_import = (e_CO2 - e_CO2_pba)*1e-9 # convert from kg to million metric ton
+net_import.loc[["US","CN"]]
+```
+top three regional contributers of US' and China's carbon footprints:
+```python
+e_CO2_US_to_CN = e_CO2_US.loc["CN"].sum() - e_CO2_CN.loc["US"].sum()
+e_CO2_US_to_CN * 1e-9
+```
+
+### 3.4 Pro capita footprint
+Download the excel file. Rename accurately. Drop it in the right folder. Call pop2015 with the requested year. If asked to select a row use for example `pop2015 = population.loc["AT","y2015"]`
+
+```python
+# Import population data
+population = pd.read_excel('data/exiobase_PopulationGDP_1995_2019.xlsx',sheet_name='Population', index_col=[0, 1, 2])
+pop2015 = population.loc[:,"y2015"]
+```
 ```python
 # Aggregate Y by region
 Y_reg = Y.groupby(level=0, axis=1, sort=False).sum()
@@ -144,7 +220,8 @@ e_CO2_pp = e_CO2/pop2015.values/1000 #convert the unit from kg to metric ton/cap
 e_CO2_pp
 ```
 
-Carbon footprint if other extensions are requested:
+### 3.5 Extended footprint
+Relating to the eventuality of calculations that account for other extensions. Ex_ not only CO2 but also CH4 and N2O
 
 ```python
 F_sat_CO2 = F_sat[F_sat.index.str.contains("CO2")].sum(axis=0)
@@ -189,7 +266,7 @@ e_CO2eq_pp = e_CO2eq/pop2015.values/1000 #convert the unit from kg to metric ton
 e_CO2eq_pp
 ```
 
-What is the proportion of CO2 emissions in CO2e in each region's carbon footprint measured in CO2e?
+__Other request:__ What is the proportion of CO2 emissions in CO2e in each region's carbon footprint measured in CO2e?
 ```python
 # Proportion of CO2 emissions to GWP by country
 e_GWP = e_CO2 + e_CH4 + e_N2O
@@ -198,3 +275,83 @@ CO2_to_CO2eq = e_CO2/e_GWP * 100
 CO2_to_CO2eq, CO2_to_CO2eq.max(), CO2_to_CO2eq.min() 
 ```
 
+### 3.6 Environmental vs Economic footprint analysis
+Using the "impact" accounts, what were the value added footprints of the US and China, respectively, in 2015?
+```python
+# Import impact accounts
+F_imp = pd.read_csv(f'{path}impacts/F.txt' , sep='\t', index_col=[0], header=[0, 1])
+F_imp_hh = pd.read_csv(f'{path}impacts/F_y.txt' , sep='\t', index_col=[0], header=[0, 1])
+```
+```python
+# VA coefficients
+VA = F_imp[F_imp.index.str.contains("Value Added")]
+f_VA = VA.values @ inv_diag_x_
+e_VA = f_VA @ L @ Y_reg
+
+e_VA_pp = e_VA/pop2015.values*1e6 
+
+e_VA_pp.loc[:, ["US", "CN"]]
+```
+
+### 3.7 Dashboard analysis
+Quantify the reliance of the UK on each of the two global regions, EU27 and Non-EU27, in 2016 concerning Non-Metallic minerals and Metal Ores.
+```python
+F_metals_ = F_sat.loc[F_sat.index.str.contains("Domestic Extraction Used - Metal Ores")]
+F_metals_hh = F_sat_hh.loc[F_sat_hh.index.str.contains("Domestic Extraction Used - Metal Ores")]
+
+# Total territorial emissions
+F_metals_tot_ter = F_metals_.loc[:,"GB"].sum().sum() + F_metals_hh.loc[:,"GB"].sum().sum()
+F_metals_tot_ter
+```
+```python
+geo_e_minerals = e_minerals.groupby(level=0, axis=0, sort=False).sum()
+```
+```python
+geo_e_minerals.GB.iloc[:27].sum()
+```
+```python
+minerals_UK_CBA = geo_e_minerals.loc[:, "GB"] 
+minerals_UK_PBA = geo_e_minerals.loc["GB", :]
+
+minerals_UK_trade_rel = minerals_UK_CBA - minerals_UK_PBA
+
+minerals_UK_trade_rel_EU = minerals_UK_trade_rel.iloc[:27].sum()
+minerals_UK_trade_rel_ROW = minerals_UK_trade_rel.iloc[-21:].sum()
+
+UK_dependency_minerals = pd.DataFrame([minerals_UK_trade_rel_EU, minerals_UK_trade_rel_ROW], index=["UK_dependency_on_EU","UK_dependency_on_ROW"], columns=["non_metallic_minerals, kt"]) 
+
+UK_dependency_minerals
+```
+```python
+f_metals = F_metals_.sum() @ inv_diag_x_ 
+```
+```python
+e_metals = np.diag(f_metals) @ L @ Y.groupby(level=0, axis=1, sort=False).sum()
+e_metals.index = Y.index
+```
+```python
+geo_e_metals = e_metals.groupby(level=0, axis=0, sort=False).sum()
+```
+```python
+metals_UK_CBA = geo_e_metals.loc[:, "GB"] 
+metals_UK_PBA = geo_e_metals.loc["GB", :]
+
+metals_UK_trade_rel = metals_UK_CBA - metals_UK_PBA
+
+metals_UK_trade_rel_EU = metals_UK_trade_rel.iloc[:27].sum()
+metals_UK_trade_rel_ROW = metals_UK_trade_rel.iloc[-21:].sum()
+
+
+UK_dependency_metals = pd.DataFrame([metals_UK_trade_rel_EU, metals_UK_trade_rel_ROW], index=["UK_dependency_on_EU","UK_dependency_on_ROW"], columns=["metal_ores, kt"]) 
+
+UK_dependency_metals
+```
+```python
+dashboard = pd.concat([UK_dependency_minerals, UK_dependency_metals],axis=1)
+dashboard
+```
+```python
+dashboard_relative = round(dashboard / np.array([minerals_UK_CBA.sum(), metals_UK_CBA.sum()]) *100, 2)
+dashboard_relative.columns = ["non_metallic_minerals, %", "metal_ores, %"]
+dashboard_relative
+```
