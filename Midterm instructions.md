@@ -35,6 +35,13 @@ Y = pd.read_csv(f'{path}Y.txt' , sep='\t', index_col=[0, 1], header=[0, 1])
 F_sat = pd.read_csv(f'{path}satellite/F.txt' , sep='\t', index_col=[0], header=[0, 1])
 F_sat_hh = pd.read_csv(f'{path}satellite/F_y.txt' , sep='\t', index_col=[0], header=[0, 1])
 ```
+In alternative, if requested a specific extension:
+
+```python
+# Import satellite accounts
+F_sat_CO2 = F_sat[F_sat.index.str.contains("CO2")].sum(axis=0)
+F_sat_hh_CO2 = F_sat_hh[F_sat_hh.index.str.contains("CO2")].sum(axis=0)
+```
 
 **Note:** So far you have imported the IOT of all 44 countries and 5 RoW regions per the 163 industries or 200 products. In the exam you'll be asked to focus on a specific region. These are the acronyms in the ISO. 
 
@@ -118,3 +125,76 @@ e_total_reg
 ```
 
 --> _Somansh: Explain when you diagonalize f and when Y. Is it because the f is used to analyse how an impact is exported up the supply chain while Y...?_
+
+## Codes you'll need
+
+```python
+# Aggregate Y by region
+Y_reg = Y.groupby(level=0, axis=1, sort=False).sum()
+```
+```python
+# Aggregate F_sat_hh by region
+F_sat_hh_CO2_reg = F_sat_hh_CO2.groupby(level=0, sort=False).sum()
+```
+```python
+# Footprint calculation
+e_CO2 = f_sat_CO2 @ L @ Y_reg + F_sat_hh_CO2_reg
+e_CO2_pp = e_CO2/pop2015.values/1000 #convert the unit from kg to metric ton/capita
+
+e_CO2_pp
+```
+
+Carbon footprint if other extensions are requested:
+
+```python
+F_sat_CO2 = F_sat[F_sat.index.str.contains("CO2")].sum(axis=0)
+F_sat_CH4 = F_sat[F_sat.index.str.contains("CH4")].sum(axis=0)*29.8
+F_sat_N2O = F_sat[F_sat.index.str.contains("N2O")].sum(axis=0)*273
+
+F_GHG_ = pd.concat([F_sat_CO2, F_sat_CH4, F_sat_N2O],axis=1).T
+F_GHG_.index = ["CO2", "CH4", "N2O"]
+F_GHG_
+```
+```python
+# Intensities satellite
+f_GHG = F_GHG_ @ inv_diag_x_ 
+f_GHG
+```
+```python
+# Households satellites
+F_sat_hh_CO2 = F_sat_hh[F_sat_hh.index.str.contains("CO2")].sum(axis=0)
+F_sat_hh_CH4 = F_sat_hh[F_sat_hh.index.str.contains("CH4")].sum(axis=0)*29.8
+F_sat_hh_N2O = F_sat_hh[F_sat_hh.index.str.contains("N2O")].sum(axis=0)*273
+
+F_hh_GHG_ = pd.concat([F_sat_hh_CO2, F_sat_hh_CH4, F_sat_hh_N2O],axis=1).T
+F_hh_GHG_.index = ["CO2", "CH4", "N2O"]
+
+# Aggregate F_sat_hh by region
+F_hh_GHG_reg = F_hh_GHG_.groupby(level=0, axis=1, sort=False).sum()
+
+F_hh_GHG_reg
+```
+
+```python
+# Footprint calculation
+e_CO2 = f_GHG.loc["CO2"] @ L @ Y_reg + F_hh_GHG_reg.loc["CO2"]
+e_CH4 = f_GHG.loc["CH4"] @ L @ Y_reg + F_hh_GHG_reg.loc["CH4"]
+e_N2O = f_GHG.loc["N2O"] @ L @ Y_reg + F_hh_GHG_reg.loc["N2O"]
+
+e_CO2eq = e_CO2 + e_CH4 + e_N2O
+
+# CO2_eq per capita
+e_CO2eq_pp = e_CO2eq/pop2015.values/1000 #convert the unit from kg to metric ton/capita
+
+e_CO2eq_pp
+```
+
+What is the proportion of CO2 emissions in CO2e in each region's carbon footprint measured in CO2e?
+```python
+# Proportion of CO2 emissions to GWP by country
+e_GWP = e_CO2 + e_CH4 + e_N2O
+CO2_to_CO2eq = e_CO2/e_GWP * 100
+
+CO2_to_CO2eq, CO2_to_CO2eq.max(), CO2_to_CO2eq.min() 
+```
+
